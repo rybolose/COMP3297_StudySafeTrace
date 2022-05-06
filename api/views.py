@@ -26,5 +26,4 @@ def load_venue_data(request):
         "venues": venuesVisited
     }
     return render(request, 'venues.html', context = context)
-    #return HttpResponse(f'{memberResp["Name"]}')
     
