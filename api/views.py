@@ -8,23 +8,23 @@ from django.shortcuts import render
 def load_venue_data(request):
     hkuID = request.GET['HKU_ID']
     dateDiag = datetime.strptime(request.GET['Date_Of_Diagnosis'], "%Y-%m-%d")
+    dateDiag = dateDiag.strftime("%Y-%m-%d")
+    disinfectURL = f"https://immense-scrubland-01353.herokuapp.com/disinfectvenues/?HKU_ID={hkuID}&Date_Of_Diagnosis={dateDiag}"
     memberURL = f'https://immense-scrubland-01353.herokuapp.com/members/{hkuID}'
-    recordURL = f'https://immense-scrubland-01353.herokuapp.com/records/'
-    member = requests.get(memberURL).json()
-    records = requests.get(recordURL).json()
 
-    venuesVisited = list()
-    for record in records:
-        if (record["HKU_ID"] == member["HKU_ID"]):
-            recordDate = datetime.strptime(record["Date_Time"][:-15:], "%Y-%m-%d")
-            if (dateDiag - recordDate <= timedelta(days=2)) and (record["Venue_Code"] not in venuesVisited):
-                venuesVisited.append(record["Venue_Code"])
-    venuesVisited.sort()
+    member = requests.get(memberURL).json()
+    disinfect_venues_json = requests.get(disinfectURL).json()
+
+    disinfect_venues = list()
+
+    for venue in disinfect_venues_json:
+        id = venue['Venue_Code']
+        disinfect_venues.append(id)
 
     context = {
         "subject": member["Name"],
-        "date": dateDiag.strftime("%Y-%m-%d"),
-        "venues": venuesVisited
+        "date": dateDiag,
+        "venues": disinfect_venues
     }
     return render(request, 'venues.html', context=context)
 
@@ -38,6 +38,7 @@ def load_close_contact_list(request):
     member = requests.get(memberURL).json()
     close_contact = requests.get(closecontactsURL).json()
     close_contact_list = []
+
     for contact in close_contact:
         id = contact['HKU_ID']
         name = contact['Name']
